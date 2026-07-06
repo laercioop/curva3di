@@ -194,9 +194,9 @@ HTML_TEMPLATE = Template(r"""<!doctype html>
     input[type="checkbox"] { accent-color: var(--accent); }
     button {
       height: 30px;
-      border: 1px solid var(--border);
-      background: #fff;
-      color: var(--text);
+      border: 1px solid var(--accent);
+      background: var(--accent);
+      color: #fff;
       font: 12px Arial, sans-serif;
       cursor: pointer;
       transition: background .15s ease, color .15s ease, border-color .15s ease,
@@ -204,8 +204,8 @@ HTML_TEMPLATE = Template(r"""<!doctype html>
     }
     button:hover {
       border-color: var(--accent);
-      background: var(--accent);
-      color: #fff;
+      background: #fff;
+      color: var(--accent);
       transform: translateY(-1px);
       box-shadow: 0 4px 10px rgba(41, 104, 172, 0.25);
     }
@@ -214,12 +214,53 @@ HTML_TEMPLATE = Template(r"""<!doctype html>
       box-shadow: none;
       background: var(--accent-deep);
       border-color: var(--accent-deep);
+      color: #fff;
     }
     button.on {
+      background: var(--accent-deep);
+      color: #fff;
+      border-color: var(--accent-deep);
+    }
+    .mode-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+    .mode-btn { width: 100%; padding: 0 6px; }
+    .mode-custom {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 8px;
+      background: #fff;
+      color: var(--accent);
+      border: 2px dashed var(--accent);
+      font-weight: 700;
+    }
+    .mode-custom:hover {
+      background: var(--accent-soft);
+      color: var(--accent-deep);
+      border-color: var(--accent-deep);
+      border-style: dashed;
+    }
+    .mode-custom.on {
       background: var(--accent);
       color: #fff;
-      border-color: var(--accent);
+      border-style: solid;
+      border-color: var(--accent-deep);
     }
+    .mode-custom .tag {
+      font-size: 9px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      background: rgba(0,0,0,0.12);
+      padding: 2px 6px;
+      font-weight: 700;
+    }
+    .mode-custom.on .tag { background: rgba(255,255,255,0.28); }
     .button-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -331,16 +372,15 @@ HTML_TEMPLATE = Template(r"""<!doctype html>
     <aside>
       <div class="section">
         <div class="section-title">Visualização</div>
-        <div class="row">
-          <label for="mode">Modo</label>
-          <select id="mode">
-            <option value="curves">Curvas por data</option>
-            <option value="surface">Superfície</option>
-            <option value="tenors">Séries por vértice</option>
-            <option value="all">Tudo</option>
-            <option value="custom">Curvas personalizadas (exclusivo)</option>
-          </select>
+        <div class="mode-grid">
+          <button type="button" class="mode-btn" data-mode="curves">Curvas por data</button>
+          <button type="button" class="mode-btn" data-mode="surface">Superfície</button>
+          <button type="button" class="mode-btn" data-mode="tenors">Séries por vértice</button>
+          <button type="button" class="mode-btn" data-mode="all">Tudo</button>
         </div>
+        <button type="button" class="mode-btn mode-custom" data-mode="custom">
+          Curvas personalizadas <span class="tag">exclusivo</span>
+        </button>
         <div class="row" id="densityRow">
           <label for="density">Densidade</label>
           <input id="density" type="range" min="1" max="30" value="7">
@@ -447,10 +487,11 @@ HTML_TEMPLATE = Template(r"""<!doctype html>
       angle: 0,
       camera: { eye: { x: 1.65, y: 1.25, z: 0.9 }, up: { x: 0, y: 0, z: 1 } },
       customCurves: [],
+      mode: 'curves',
     };
 
     const controls = {
-      mode: document.getElementById('mode'),
+      modeButtons: document.querySelectorAll('.mode-btn'),
       density: document.getElementById('density'),
       opacity: document.getElementById('opacity'),
       startDate: document.getElementById('startDate'),
@@ -532,7 +573,7 @@ HTML_TEMPLATE = Template(r"""<!doctype html>
     }
 
     function updateModeVisibility() {
-      const isCustom = controls.mode.value === 'custom';
+      const isCustom = state.mode === 'custom';
       document.getElementById('sectionCorte').style.display = isCustom ? 'none' : '';
       document.getElementById('sectionCustom').style.display = isCustom ? '' : 'none';
       document.getElementById('densityRow').style.display = isCustom ? 'none' : '';
@@ -564,7 +605,7 @@ HTML_TEMPLATE = Template(r"""<!doctype html>
 
     function currentSlices() {
       const tenorIdx = DATA.tenors.map((t, i) => state.selected.has(t.label) ? i : -1).filter(i => i >= 0);
-      if (controls.mode.value === 'custom') {
+      if (state.mode === 'custom') {
         return { a: 0, b: DATA.dates.length - 1, step: 1, tenorIdx, dateIdx: [] };
       }
       let a = dateIndex(controls.startDate.value);
@@ -597,7 +638,7 @@ HTML_TEMPLATE = Template(r"""<!doctype html>
     function traces() {
       const { a, b, step, tenorIdx, dateIdx } = currentSlices();
       const opacity = Number(controls.opacity.value) / 100;
-      const mode = controls.mode.value;
+      const mode = state.mode;
       const out = [];
 
       if (mode === 'custom') {
@@ -758,7 +799,14 @@ HTML_TEMPLATE = Template(r"""<!doctype html>
         document.getElementById(id).addEventListener('input', draw);
       });
 
-      controls.mode.addEventListener('input', () => { updateModeVisibility(); draw(); });
+      controls.modeButtons.forEach(btn => {
+        btn.onclick = () => {
+          state.mode = btn.dataset.mode;
+          controls.modeButtons.forEach(b => b.classList.toggle('on', b === btn));
+          updateModeVisibility();
+          draw();
+        };
+      });
       document.getElementById('addCustomCurve').onclick = addCustomCurve;
 
       controls.tenorChecks.addEventListener('change', ev => {
@@ -799,6 +847,7 @@ HTML_TEMPLATE = Template(r"""<!doctype html>
     clampDateInputs();
     renderTenorChecks();
     renderCustomList();
+    controls.modeButtons.forEach(b => b.classList.toggle('on', b.dataset.mode === state.mode));
     updateModeVisibility();
     initEvents();
     draw();
