@@ -83,6 +83,9 @@ HTML_TEMPLATE = Template(r"""<!doctype html>
       --text: #202124;
       --muted: #6b7280;
       --border: #d3d7dc;
+      --accent: rgb(41, 104, 172);
+      --accent-deep: rgb(30, 80, 138);
+      --accent-soft: #e9eff7;
       --blue: #4a7fb5;
       --red: #cd6252;
       --green: #5c9478;
@@ -133,6 +136,12 @@ HTML_TEMPLATE = Template(r"""<!doctype html>
       line-height: 1.1;
       letter-spacing: 0;
     }
+    .title-rule {
+      width: 46px;
+      height: 3px;
+      background: var(--accent);
+      margin-top: 6px;
+    }
     .meta {
       color: var(--muted);
       font-size: 12px;
@@ -143,15 +152,16 @@ HTML_TEMPLATE = Template(r"""<!doctype html>
       background: #fff;
       padding: 12px;
       margin-bottom: 12px;
+      transition: border-color .2s ease;
     }
     .section-title {
       font-family: "Segoe UI", Arial, sans-serif;
       font-weight: 700;
-      color: var(--dark);
-      font-size: 13px;
+      color: var(--accent);
+      font-size: 12px;
       margin-bottom: 10px;
       text-transform: uppercase;
-      letter-spacing: .02em;
+      letter-spacing: .12em;
     }
     .row {
       display: grid;
@@ -164,7 +174,7 @@ HTML_TEMPLATE = Template(r"""<!doctype html>
       font-size: 12px;
       color: #30343a;
     }
-    input[type="date"], select {
+    input[type="date"], select, input[type="color"] {
       width: 100%;
       height: 30px;
       border: 1px solid var(--border);
@@ -172,17 +182,44 @@ HTML_TEMPLATE = Template(r"""<!doctype html>
       color: var(--text);
       padding: 4px 6px;
       font: 12px Arial, sans-serif;
+      transition: border-color .15s ease, box-shadow .15s ease;
     }
-    input[type="range"] { width: 100%; }
+    input[type="color"] { padding: 2px; cursor: pointer; }
+    input[type="date"]:focus, select:focus, input[type="color"]:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-soft);
+    }
+    input[type="range"] { width: 100%; accent-color: var(--accent); }
+    input[type="checkbox"] { accent-color: var(--accent); }
     button {
       height: 30px;
       border: 1px solid var(--border);
-      background: var(--panel-2);
+      background: #fff;
       color: var(--text);
       font: 12px Arial, sans-serif;
       cursor: pointer;
+      transition: background .15s ease, color .15s ease, border-color .15s ease,
+        transform .12s ease, box-shadow .15s ease;
     }
-    button:hover { border-color: #aeb5bd; background: #e4e8eb; }
+    button:hover {
+      border-color: var(--accent);
+      background: var(--accent);
+      color: #fff;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 10px rgba(41, 104, 172, 0.25);
+    }
+    button:active {
+      transform: translateY(0);
+      box-shadow: none;
+      background: var(--accent-deep);
+      border-color: var(--accent-deep);
+    }
+    button.on {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
     .button-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -204,6 +241,11 @@ HTML_TEMPLATE = Template(r"""<!doctype html>
       border: 1px solid var(--border);
       background: #fff;
       padding: 4px 6px;
+      transition: border-color .15s ease, background .15s ease;
+    }
+    .check:hover {
+      border-color: var(--accent);
+      background: var(--accent-soft);
     }
     .swatch {
       width: 18px;
@@ -217,6 +259,57 @@ HTML_TEMPLATE = Template(r"""<!doctype html>
       line-height: 1.45;
       color: var(--muted);
       margin-top: 8px;
+    }
+    .custom-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 4px;
+    }
+    .custom-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid var(--border);
+      background: #fff;
+      padding: 5px 8px;
+      font-size: 12px;
+      transition: border-color .15s ease, transform .12s ease;
+    }
+    .custom-row:hover {
+      border-color: var(--accent);
+      transform: translateX(1px);
+    }
+    .custom-row .swatch2 {
+      width: 16px;
+      height: 16px;
+      flex: 0 0 auto;
+      border: 1px solid rgba(0,0,0,.15);
+    }
+    .custom-row .custom-date { flex: 1; }
+    .custom-empty {
+      font-size: 12px;
+      color: var(--muted);
+      padding: 6px 2px;
+    }
+    .custom-remove {
+      height: 22px;
+      width: 22px;
+      border: 1px solid var(--border);
+      background: #fff;
+      cursor: pointer;
+      line-height: 1;
+      padding: 0;
+      font-size: 14px;
+      color: var(--muted);
+      transition: background .15s ease, color .15s ease, border-color .15s ease;
+    }
+    .custom-remove:hover {
+      background: var(--red);
+      color: #fff;
+      border-color: var(--red);
+      transform: none;
+      box-shadow: none;
     }
     #chart {
       width: 100%;
@@ -245,9 +338,10 @@ HTML_TEMPLATE = Template(r"""<!doctype html>
             <option value="surface">Superfície</option>
             <option value="tenors">Séries por vértice</option>
             <option value="all">Tudo</option>
+            <option value="custom">Curvas personalizadas (exclusivo)</option>
           </select>
         </div>
-        <div class="row">
+        <div class="row" id="densityRow">
           <label for="density">Densidade</label>
           <input id="density" type="range" min="1" max="30" value="7">
         </div>
@@ -258,7 +352,7 @@ HTML_TEMPLATE = Template(r"""<!doctype html>
         <div class="status" id="densityLabel"></div>
       </div>
 
-      <div class="section">
+      <div class="section" id="sectionCorte">
         <div class="section-title">Corte no tempo</div>
         <div class="row">
           <label for="startDate">Início</label>
@@ -276,6 +370,20 @@ HTML_TEMPLATE = Template(r"""<!doctype html>
           <button data-window="1825">5Y</button>
           <button data-window="all">Tudo</button>
         </div>
+      </div>
+
+      <div class="section" id="sectionCustom" style="display:none;">
+        <div class="section-title">Curvas personalizadas</div>
+        <div class="row">
+          <label for="customDate">Data</label>
+          <input id="customDate" type="date">
+        </div>
+        <div class="row">
+          <label for="customColor">Cor</label>
+          <input id="customColor" type="color" value="#4a7fb5">
+        </div>
+        <button id="addCustomCurve" style="width:100%; margin-bottom: 10px;">+ Adicionar curva</button>
+        <div class="custom-list" id="customList"></div>
       </div>
 
       <div class="section">
@@ -317,7 +425,10 @@ HTML_TEMPLATE = Template(r"""<!doctype html>
 
     <main>
       <header>
-        <h1>Curva DI 3D</h1>
+        <div>
+          <h1>Curva DI 3D</h1>
+          <div class="title-rule"></div>
+        </div>
         <div class="meta">Fonte: didol - novo_ticker.xlsx | X = tempo | Y = prazo | Z = % a.a. | Gerado em $generated_at</div>
       </header>
       <div class="chart-wrap">
@@ -335,6 +446,7 @@ HTML_TEMPLATE = Template(r"""<!doctype html>
       rotating: false,
       angle: 0,
       camera: { eye: { x: 1.65, y: 1.25, z: 0.9 }, up: { x: 0, y: 0, z: 1 } },
+      customCurves: [],
     };
 
     const controls = {
@@ -346,10 +458,23 @@ HTML_TEMPLATE = Template(r"""<!doctype html>
       status: document.getElementById('status'),
       densityLabel: document.getElementById('densityLabel'),
       tenorChecks: document.getElementById('tenorChecks'),
+      customDate: document.getElementById('customDate'),
+      customColor: document.getElementById('customColor'),
+      customList: document.getElementById('customList'),
     };
 
     function dateIndex(dateStr) {
       return DATA.dates.findIndex(d => d === dateStr);
+    }
+
+    function nearestDateIndex(dateStr) {
+      if (!dateStr) return -1;
+      const idx = dateIndex(dateStr);
+      if (idx >= 0) return idx;
+      for (let i = 0; i < DATA.dates.length; i++) {
+        if (DATA.dates[i] > dateStr) return Math.max(0, i - 1);
+      }
+      return DATA.dates.length - 1;
     }
 
     function clampDateInputs() {
@@ -359,6 +484,58 @@ HTML_TEMPLATE = Template(r"""<!doctype html>
       controls.endDate.max = DATA.dates[DATA.dates.length - 1];
       controls.startDate.value = DATA.dates[Math.max(0, DATA.dates.length - 730)];
       controls.endDate.value = DATA.dates[DATA.dates.length - 1];
+      controls.customDate.min = DATA.dates[0];
+      controls.customDate.max = DATA.dates[DATA.dates.length - 1];
+      controls.customDate.value = DATA.dates[DATA.dates.length - 1];
+    }
+
+    function addCustomCurve() {
+      const idx = nearestDateIndex(controls.customDate.value);
+      if (idx < 0) return;
+      state.customCurves.push({ date: DATA.dates[idx], color: controls.customColor.value });
+      renderCustomList();
+      draw();
+    }
+
+    function removeCustomCurve(i) {
+      state.customCurves.splice(i, 1);
+      renderCustomList();
+      draw();
+    }
+
+    function renderCustomList() {
+      controls.customList.innerHTML = '';
+      if (!state.customCurves.length) {
+        const empty = document.createElement('div');
+        empty.className = 'custom-empty';
+        empty.textContent = 'Nenhuma curva adicionada ainda.';
+        controls.customList.appendChild(empty);
+        return;
+      }
+      state.customCurves.forEach((c, i) => {
+        const row = document.createElement('div');
+        row.className = 'custom-row';
+        const swatch = document.createElement('span');
+        swatch.className = 'swatch2';
+        swatch.style.background = c.color;
+        const label = document.createElement('span');
+        label.className = 'custom-date';
+        label.textContent = c.date;
+        const remove = document.createElement('button');
+        remove.className = 'custom-remove';
+        remove.textContent = '×';
+        remove.title = 'Remover curva';
+        remove.onclick = () => removeCustomCurve(i);
+        row.append(swatch, label, remove);
+        controls.customList.appendChild(row);
+      });
+    }
+
+    function updateModeVisibility() {
+      const isCustom = controls.mode.value === 'custom';
+      document.getElementById('sectionCorte').style.display = isCustom ? 'none' : '';
+      document.getElementById('sectionCustom').style.display = isCustom ? '' : 'none';
+      document.getElementById('densityRow').style.display = isCustom ? 'none' : '';
     }
 
     function tenorColor(label) {
@@ -386,13 +563,16 @@ HTML_TEMPLATE = Template(r"""<!doctype html>
     }
 
     function currentSlices() {
+      const tenorIdx = DATA.tenors.map((t, i) => state.selected.has(t.label) ? i : -1).filter(i => i >= 0);
+      if (controls.mode.value === 'custom') {
+        return { a: 0, b: DATA.dates.length - 1, step: 1, tenorIdx, dateIdx: [] };
+      }
       let a = dateIndex(controls.startDate.value);
       let b = dateIndex(controls.endDate.value);
       if (a < 0) a = 0;
       if (b < 0) b = DATA.dates.length - 1;
       if (a > b) [a, b] = [b, a];
       const step = Number(controls.density.value);
-      const tenorIdx = DATA.tenors.map((t, i) => state.selected.has(t.label) ? i : -1).filter(i => i >= 0);
       const dateIdx = [];
       for (let i = a; i <= b; i += step) dateIdx.push(i);
       if (!dateIdx.includes(b)) dateIdx.push(b);
@@ -419,6 +599,31 @@ HTML_TEMPLATE = Template(r"""<!doctype html>
       const opacity = Number(controls.opacity.value) / 100;
       const mode = controls.mode.value;
       const out = [];
+
+      if (mode === 'custom') {
+        state.customCurves.forEach(c => {
+          const idx = nearestDateIndex(c.date);
+          if (idx < 0) return;
+          const isExact = DATA.dates[idx] === c.date;
+          out.push({
+            type: 'scatter3d',
+            mode: 'lines+markers',
+            name: c.date + (isExact ? '' : ' (aprox.)'),
+            x: tenorIdx.map(() => DATA.z_days[idx]),
+            y: tenorIdx.map(j => DATA.tenors[j].years),
+            z: tenorIdx.map(j => DATA.values[idx][j]),
+            line: { color: c.color, width: 5 },
+            marker: { size: 3, color: c.color },
+            opacity,
+            hovertemplate: 'Data: ' + DATA.dates[idx] + '<br>Prazo: %{y:.2f} anos<br>Taxa: %{z:.2f}%<extra></extra>'
+          });
+        });
+        controls.densityLabel.textContent = '';
+        controls.status.textContent = state.customCurves.length
+          ? `$${state.customCurves.length} curva(s) personalizada(s) | $${tenorIdx.length} vértice(s)`
+          : 'Adicione datas na secao "Curvas personalizadas" para montar as curvas.';
+        return out;
+      }
 
       if (mode === 'surface' || mode === 'all') {
         const xTime = dateIdx.map(i => tenorIdx.map(() => DATA.z_days[i]));
@@ -549,9 +754,12 @@ HTML_TEMPLATE = Template(r"""<!doctype html>
     }
 
     function initEvents() {
-      ['mode', 'density', 'opacity', 'startDate', 'endDate'].forEach(id => {
+      ['density', 'opacity', 'startDate', 'endDate'].forEach(id => {
         document.getElementById(id).addEventListener('input', draw);
       });
+
+      controls.mode.addEventListener('input', () => { updateModeVisibility(); draw(); });
+      document.getElementById('addCustomCurve').onclick = addCustomCurve;
 
       controls.tenorChecks.addEventListener('change', ev => {
         const t = ev.target.dataset.tenor;
@@ -581,14 +789,17 @@ HTML_TEMPLATE = Template(r"""<!doctype html>
       document.getElementById('resetView').onclick = () => setCamera('persp');
       document.getElementById('zoomIn').onclick = () => scaleCamera(0.82);
       document.getElementById('zoomOut').onclick = () => scaleCamera(1.22);
-      document.getElementById('rotate').onclick = () => {
+      document.getElementById('rotate').onclick = (ev) => {
         state.rotating = !state.rotating;
+        ev.currentTarget.classList.toggle('on', state.rotating);
         if (state.rotating) rotateLoop();
       };
     }
 
     clampDateInputs();
     renderTenorChecks();
+    renderCustomList();
+    updateModeVisibility();
     initEvents();
     draw();
   </script>
