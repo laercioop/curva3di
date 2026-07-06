@@ -597,17 +597,48 @@ HTML_TEMPLATE = Template(r"""<!doctype html>
 """)
 
 
+def load_previous_payload(path: Path) -> dict | None:
+    if not path.exists():
+        return None
+    text = path.read_text(encoding="utf-8")
+    marker = "const DATA = "
+    start = text.find(marker)
+    if start == -1:
+        return None
+    try:
+        return json.JSONDecoder().raw_decode(text, start + len(marker))[0]
+    except json.JSONDecodeError:
+        return None
+
+
 def main() -> None:
     df = read_history()
     payload = build_payload(df)
+    previous = load_previous_payload(OUT_HTML_PAGES) or load_previous_payload(OUT_HTML)
+
+    new_last = payload["dates"][-1]
+    new_count = len(payload["dates"])
+    prev_last = previous["dates"][-1] if previous else None
+    prev_count = len(previous["dates"]) if previous else 0
+
+    print(f"Ultima data ja publicada:      {prev_last or '(nenhuma publicacao anterior)'}")
+    print(f"Ultima data na planilha:       {new_last}")
+
+    if previous and previous.get("dates") == payload["dates"] and previous.get("values") == payload["values"]:
+        print("Situacao:                      sem dados novos, nada a atualizar.")
+        raise SystemExit(2)
+
+    added = new_count - prev_count
+    print(f"Datas novas a publicar:        {max(added, 0)}")
+    print(f"Atualizando publicacao para:   {new_last}")
+
     html = HTML_TEMPLATE.substitute(
         generated_at=payload["generated_at"],
         payload_json=json.dumps(payload, ensure_ascii=False, separators=(",", ":")),
     )
     OUT_HTML.write_text(html, encoding="utf-8")
     OUT_HTML_PAGES.write_text(html, encoding="utf-8")
-    print(f"Gerado: {OUT_HTML}")
-    print(f"Gerado: {OUT_HTML_PAGES}")
+    print(f"Concluido: publicado ate {new_last} ({new_count} datas no total).")
 
 
 if __name__ == "__main__":
