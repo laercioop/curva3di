@@ -73,7 +73,7 @@ HTML_TEMPLATE = Template(r"""<!doctype html>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Curva DI 3D</title>
+  <title>Curva3DI</title>
   <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
   <style>
     :root {
@@ -466,7 +466,7 @@ HTML_TEMPLATE = Template(r"""<!doctype html>
     <main>
       <header>
         <div>
-          <h1>Curva DI 3D</h1>
+          <h1>Curva3DI</h1>
           <div class="title-rule"></div>
         </div>
         <div class="meta">Fonte: didol - novo_ticker.xlsx | X = tempo | Y = prazo | Z = % a.a. | Gerado em $generated_at</div>
